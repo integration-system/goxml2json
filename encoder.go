@@ -55,9 +55,9 @@ func (enc *Encoder) format(n *Node, lvl int) error {
 			enc.write("\"")
 			enc.write(enc.contentPrefix)
 			enc.write("content")
-			enc.write("\": ")
+			enc.write("\": [")
 			enc.write(sanitiseString(n.Data))
-			enc.write(", ")
+			enc.write("], ")
 		}
 
 		i := 0
@@ -67,21 +67,16 @@ func (enc *Encoder) format(n *Node, lvl int) error {
 			enc.write(label)
 			enc.write("\": ")
 
-			if n.ChildrenAlwaysAsArray || len(children) > 1 {
-				// Array
-				enc.write("[")
-				for j, c := range children {
-					enc.format(c, lvl+1)
+			// Array
+			enc.write("[")
+			for j, c := range children {
+				enc.format(c, lvl+1)
 
-					if j < len(children)-1 {
-						enc.write(", ")
-					}
+				if j < len(children)-1 {
+					enc.write(", ")
 				}
-				enc.write("]")
-			} else {
-				// Map
-				enc.format(children[0], lvl+1)
 			}
+			enc.write("]")
 
 			if i < tot-1 {
 				enc.write(", ")

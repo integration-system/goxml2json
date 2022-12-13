@@ -9,24 +9,24 @@ import (
 )
 
 type Product struct {
-	ID       int         `json:"id"`
-	Price    float64     `json:"price"`
-	Deleted  bool        `json:"deleted"`
-	Nullable interface{} `json:"nullable"`
+	ID       []int     `json:"id"`
+	Price    []float64 `json:"price"`
+	Deleted  []bool    `json:"deleted"`
+	Nullable []any     `json:"nullable"`
 }
 
 type StringProduct struct {
-	ID       string `json:"id"`
-	Price    string `json:"price"`
-	Deleted  string `json:"deleted"`
-	Nullable string `json:"nullable"`
+	ID       []string `json:"id"`
+	Price    []string `json:"price"`
+	Deleted  []string `json:"deleted"`
+	Nullable []string `json:"nullable"`
 }
 
 type MixedProduct struct {
-	ID       string  `json:"id"`
-	Price    float64 `json:"price"`
-	Deleted  string  `json:"deleted"`
-	Nullable string  `json:"nullable"`
+	ID       []string  `json:"id"`
+	Price    []float64 `json:"price"`
+	Deleted  []string  `json:"deleted"`
+	Nullable []string  `json:"nullable"`
 }
 
 const (
@@ -46,10 +46,10 @@ func TestAllJSTypeParsing(t *testing.T) {
 	product := Product{}
 	err = json.Unmarshal(jsBuf.Bytes(), &product)
 	assert.NoError(t, err, "could not unmarshal test json")
-	assert.Equal(t, 42, product.ID, "ID should match")
-	assert.Equal(t, 13.32, product.Price, "price should match")
-	assert.Equal(t, true, product.Deleted, "deleted should match")
-	assert.Equal(t, nil, product.Nullable, "nullable should match")
+	assert.Equal(t, 42, product.ID[0], "ID should match")
+	assert.Equal(t, 13.32, product.Price[0], "price should match")
+	assert.Equal(t, true, product.Deleted[0], "deleted should match")
+	assert.Equal(t, nil, product.Nullable[0], "nullable should match")
 }
 
 func TestStringParsing(t *testing.T) {
@@ -59,10 +59,10 @@ func TestStringParsing(t *testing.T) {
 	product := StringProduct{}
 	err = json.Unmarshal(jsBuf.Bytes(), &product)
 	assert.NoError(t, err, "could not unmarshal test json")
-	assert.Equal(t, "42", product.ID, "ID should match")
-	assert.Equal(t, "13.32", product.Price, "price should match")
-	assert.Equal(t, "true", product.Deleted, "deleted should match")
-	assert.Equal(t, "null", product.Nullable, "nullable should match")
+	assert.Equal(t, "42", product.ID[0], "ID should match")
+	assert.Equal(t, "13.32", product.Price[0], "price should match")
+	assert.Equal(t, "true", product.Deleted[0], "deleted should match")
+	assert.Equal(t, "null", product.Nullable[0], "nullable should match")
 }
 
 func TestMixedParsing(t *testing.T) {
@@ -72,8 +72,8 @@ func TestMixedParsing(t *testing.T) {
 	product := MixedProduct{}
 	err = json.Unmarshal(jsBuf.Bytes(), &product)
 	assert.NoError(t, err, "could not unmarshal test json")
-	assert.Equal(t, "42", product.ID, "ID should match")
-	assert.Equal(t, 13.32, product.Price, "price should match")
-	assert.Equal(t, "true", product.Deleted, "deleted should match")
-	assert.Equal(t, "null", product.Nullable, "nullable should match")
+	assert.Equal(t, "42", product.ID[0], "ID should match")
+	assert.Equal(t, 13.32, product.Price[0], "price should match")
+	assert.Equal(t, "true", product.Deleted[0], "deleted should match")
+	assert.Equal(t, "null", product.Nullable[0], "nullable should match")
 }
