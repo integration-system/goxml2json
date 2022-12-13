@@ -1,4 +1,4 @@
-module xml2json
+module github.com/integration-system/goxml2json
 
 go 1.19
 

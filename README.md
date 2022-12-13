@@ -4,11 +4,11 @@ Go package that converts XML to JSON
 
 ### Install
 
-    go get -u github.com/basgys/goxml2json
+    go get -u https://github.com/integration-system/goxml2json
 
 ### Importing
 
-    import github.com/basgys/goxml2json
+    import https://github.com/integration-system/goxml2json
 
 ### Usage
 

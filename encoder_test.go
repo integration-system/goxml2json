@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/integration-system/goxml2json"
 	"github.com/stretchr/testify/suite"
-	"xml2json"
 )
 
 func TestEncoder_Suite(t *testing.T) {

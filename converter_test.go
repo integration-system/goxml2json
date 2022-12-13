@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/integration-system/goxml2json"
 	"github.com/stretchr/testify/suite"
-	"xml2json"
 )
 
 func TestConverter_Suite(t *testing.T) {
