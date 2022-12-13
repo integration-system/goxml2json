@@ -5,6 +5,7 @@ import (
 	"io"
 	"unicode"
 
+	"github.com/pkg/errors"
 	"golang.org/x/net/html/charset"
 )
 
@@ -77,9 +78,13 @@ func (dec *Decoder) Decode(root *Node) error {
 	}
 
 	for {
-		t, _ := xmlDec.Token()
-		if t == nil {
-			break
+		t, err := xmlDec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+
+			return errors.WithMessage(err, "xml decoder token")
 		}
 
 		switch se := t.(type) {
