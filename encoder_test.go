@@ -1,27 +1,33 @@
-package xml2json
+package xml2json_test
 
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"testing"
 
-	sj "github.com/bitly/go-simplejson"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
+	"xml2json"
 )
 
-type bio struct {
-	Firstname string
-	Lastname  string
-	Hobbies   []string
-	Misc      map[string]string
+func TestEncoder_Suite(t *testing.T) {
+	t.Parallel()
+	suite.Run(t, &TestEncoder{})
 }
 
-// TestEncode ensures that encode outputs the expected JSON document.
-func TestEncode(t *testing.T) {
-	var err error
-	assert := assert.New(t)
+type TestEncoder struct {
+	suite.Suite
+}
 
+func (t *TestEncoder) SetupSuite() {}
+
+// TestEncode ensures that encode outputs the expected JSON document.
+func (t *TestEncoder) TestEncode() {
+	type bio struct {
+		Firstname string
+		Lastname  string
+		Hobbies   []string
+		Misc      map[string]string
+	}
 	author := bio{
 		Firstname: "Bastien",
 		Lastname:  "Gysler",
@@ -40,111 +46,80 @@ func TestEncode(t *testing.T) {
 	}
 
 	// Build document
-	root := &Node{}
-	root.AddChild("firstname", &Node{
+	root := &xml2json.Node{}
+	root.AddChild("firstname", &xml2json.Node{
 		Data: author.Firstname,
 	})
-	root.AddChild("lastname", &Node{
+	root.AddChild("lastname", &xml2json.Node{
 		Data: author.Lastname,
 	})
 
 	for _, h := range author.Hobbies {
-		root.AddChild("hobbies", &Node{
+		root.AddChild("hobbies", &xml2json.Node{
 			Data: h,
 		})
 	}
 
-	misc := &Node{}
+	misc := &xml2json.Node{}
 	for k, v := range author.Misc {
-		misc.AddChild(k, &Node{
+		misc.AddChild(k, &xml2json.Node{
 			Data: v,
 		})
 	}
 	root.AddChild("misc", misc)
-	var enc *Encoder
+	var enc *xml2json.Encoder
 
 	// Convert to JSON string
 	buf := new(bytes.Buffer)
-	enc = NewEncoder(buf)
+	enc = xml2json.NewEncoder(buf)
 
-	err = enc.Encode(nil)
-	assert.NoError(err)
+	err := enc.Encode(nil)
+	t.NoError(err)
 
-	attr := WithAttrPrefix("test")
+	attr := xml2json.WithAttrPrefix("test")
 	attr.AddToEncoder(enc)
-	content := WithContentPrefix("test2")
+	content := xml2json.WithContentPrefix("test2")
 	content.AddToEncoder(enc)
 
 	err = enc.Encode(root)
-	assert.NoError(err)
+	t.NoError(err)
 
 	// Build SimpleJSON
-	sj, err := sj.NewJson(buf.Bytes())
-	res, err := sj.Map()
-	assert.NoError(err)
-
-	// Assertions
-	assert.Equal(author.Firstname, res["firstname"])
-	assert.Equal(author.Lastname, res["lastname"])
-
-	resHobbies, err := sj.Get("hobbies").StringArray()
-	assert.NoError(err)
-	assert.Equal(author.Hobbies, resHobbies)
-
-	resMisc, err := sj.Get("misc").Map()
-	assert.NoError(err)
-	for k, v := range resMisc {
-		assert.Equal(author.Misc[k], v)
-	}
-
-	enc.err = fmt.Errorf("Testing if error provided is returned")
-	assert.Error(enc.Encode(nil))
+	expectedResultBytes := []byte(`
+{
+  "firstname": [
+    "Bastien"
+  ],
+  "lastname": [
+    "Gysler"
+  ],
+  "hobbies": [
+    "DJ",
+    "Running",
+    "Tennis"
+  ],
+  "misc": [
+    {
+      "lineSeparator": ["\u2028"],
+      "Nationality": ["Swiss"],
+      "City": ["Zürich"],
+      "foo": [""],
+      "bar": ["\"quoted text\""],
+      "esc": ["escaped \\ sanitized"],
+      "r": ["\r return line"],
+      "default": ["< >"],
+      "runeError": ["\uFFFD"]
+    }
+  ]
 }
+`)
+	expectedResult := make(map[string]any)
+	err = json.Unmarshal(expectedResultBytes, &expectedResult)
+	t.NoError(err)
 
-// TestEncodeWithChildrenAsExplicitArray ensures that ChildrenAlwaysAsArray flag works as expected.
-func TestEncodeWithChildrenAsExplicitArray(t *testing.T) {
-	type hobbies struct {
-		Hobbies []string `json:"hobbies"`
-	}
+	actualResult := make(map[string]any)
+	err = json.Unmarshal(buf.Bytes(), &actualResult)
+	t.NoError(err)
 
-	var (
-		testBio hobbies
-		err     error
-	)
-	assert := assert.New(t)
-
-	author := bio{
-		Hobbies: []string{"DJ"},
-	}
-
-	// ChildrenAlwaysAsArray is not set
-	root := &Node{}
-	for _, h := range author.Hobbies {
-		root.AddChild("hobbies", &Node{
-			Data: h,
-		})
-	}
-	var enc *Encoder
-
-	buf := new(bytes.Buffer)
-	enc = NewEncoder(buf)
-
-	err = enc.Encode(root)
-	assert.NoError(err)
-
-	json.Unmarshal(buf.Bytes(), &testBio)
-	assert.Equal(0, len(testBio.Hobbies))
-
-	// ChildrenAlwaysAsArray is set
-	root.ChildrenAlwaysAsArray = true
-	testBio = hobbies{}
-
-	buf = new(bytes.Buffer)
-	enc = NewEncoder(buf)
-
-	err = enc.Encode(root)
-	assert.NoError(err)
-
-	json.Unmarshal(buf.Bytes(), &testBio)
-	assert.Equal(1, len(testBio.Hobbies))
+	t.EqualValues(expectedResult, actualResult)
 }

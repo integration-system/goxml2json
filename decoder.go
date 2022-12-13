@@ -5,22 +5,17 @@ import (
 	"io"
 	"unicode"
 
+	"github.com/pkg/errors"
 	"golang.org/x/net/html/charset"
-)
-
-const (
-	attrPrefix    = "-"
-	contentPrefix = "#"
 )
 
 // A Decoder reads and decodes XML objects from an input stream.
 type Decoder struct {
-	r               io.Reader
+	reader          io.Reader
 	err             error
 	attributePrefix string
 	contentPrefix   string
 	excludeAttrs    map[string]bool
-	formatters      []nodeFormatter
 }
 
 type element struct {
@@ -37,10 +32,6 @@ func (dec *Decoder) SetContentPrefix(prefix string) {
 	dec.contentPrefix = prefix
 }
 
-func (dec *Decoder) AddFormatters(formatters []nodeFormatter) {
-	dec.formatters = formatters
-}
-
 func (dec *Decoder) ExcludeAttributes(attrs []string) {
 	for _, attr := range attrs {
 		dec.excludeAttrs[attr] = true
@@ -53,9 +44,14 @@ func (dec *Decoder) DecodeWithCustomPrefixes(root *Node, contentPrefix string, a
 	return dec.Decode(root)
 }
 
-// NewDecoder returns a new decoder that reads from r.
-func NewDecoder(r io.Reader, plugins ...plugin) *Decoder {
-	d := &Decoder{r: r, contentPrefix: contentPrefix, attributePrefix: attrPrefix, excludeAttrs: map[string]bool{}}
+// NewDecoder returns a new decoder that reads from reader.
+func NewDecoder(reader io.Reader, plugins ...Plugin) *Decoder {
+	d := &Decoder{
+		reader:          reader,
+		contentPrefix:   "",
+		attributePrefix: "",
+		excludeAttrs:    make(map[string]bool),
+	}
 	for _, p := range plugins {
 		d = p.AddToDecoder(d)
 	}
@@ -65,7 +61,7 @@ func NewDecoder(r io.Reader, plugins ...plugin) *Decoder {
 // Decode reads the next JSON-encoded value from its
 // input and stores it in the value pointed to by v.
 func (dec *Decoder) Decode(root *Node) error {
-	xmlDec := xml.NewDecoder(dec.r)
+	xmlDec := xml.NewDecoder(dec.reader)
 
 	// That will convert the charset if the provided XML is non-UTF-8
 	xmlDec.CharsetReader = charset.NewReaderLabel
@@ -77,9 +73,13 @@ func (dec *Decoder) Decode(root *Node) error {
 	}
 
 	for {
-		t, _ := xmlDec.Token()
-		if t == nil {
-			break
+		t, err := xmlDec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+
+			return errors.WithMessage(err, "xml decoder token")
 		}
 
 		switch se := t.(type) {
@@ -100,7 +100,7 @@ func (dec *Decoder) Decode(root *Node) error {
 			}
 		case xml.CharData:
 			// Extract XML data (if any)
-			elem.n.Data = trimNonGraphic(string(xml.CharData(se)))
+			elem.n.Data = TrimNonGraphic(string(se))
 		case xml.EndElement:
 			// And add it to its parent list
 			if elem.parent != nil {
@@ -112,20 +112,16 @@ func (dec *Decoder) Decode(root *Node) error {
 		}
 	}
 
-	for _, formatter := range dec.formatters {
-		formatter.Format(root)
-	}
-
 	return nil
 }
 
-// trimNonGraphic returns a slice of the string s, with all leading and trailing
+// TrimNonGraphic returns a slice of the string s, with all leading and trailing
 // non graphic characters and spaces removed.
 //
 // Graphic characters include letters, marks, numbers, punctuation, symbols,
 // and spaces, from categories L, M, N, P, S, Zs.
 // Spacing characters are set by category Z and property Pattern_White_Space.
-func trimNonGraphic(s string) string {
+func TrimNonGraphic(s string) string {
 	if s == "" {
 		return s
 	}

@@ -8,16 +8,20 @@ import (
 
 // An Encoder writes JSON objects to an output stream.
 type Encoder struct {
-	w               io.Writer
+	writer          io.Writer
 	err             error
 	contentPrefix   string
 	attributePrefix string
 	tc              encoderTypeConverter
 }
 
-// NewEncoder returns a new encoder that writes to w.
-func NewEncoder(w io.Writer, plugins ...plugin) *Encoder {
-	e := &Encoder{w: w, contentPrefix: contentPrefix, attributePrefix: attrPrefix}
+// NewEncoder returns a new encoder that writes to writer.
+func NewEncoder(writer io.Writer, plugins ...Plugin) *Encoder {
+	e := &Encoder{
+		writer:          writer,
+		contentPrefix:   "",
+		attributePrefix: "",
+	}
 	for _, p := range plugins {
 		e = p.AddToEncoder(e)
 	}
@@ -55,9 +59,9 @@ func (enc *Encoder) format(n *Node, lvl int) error {
 			enc.write("\"")
 			enc.write(enc.contentPrefix)
 			enc.write("content")
-			enc.write("\": ")
+			enc.write("\": [")
 			enc.write(sanitiseString(n.Data))
-			enc.write(", ")
+			enc.write("], ")
 		}
 
 		i := 0
@@ -67,21 +71,16 @@ func (enc *Encoder) format(n *Node, lvl int) error {
 			enc.write(label)
 			enc.write("\": ")
 
-			if n.ChildrenAlwaysAsArray || len(children) > 1 {
-				// Array
-				enc.write("[")
-				for j, c := range children {
-					enc.format(c, lvl+1)
+			// Array
+			enc.write("[")
+			for j, c := range children {
+				enc.format(c, lvl+1)
 
-					if j < len(children)-1 {
-						enc.write(", ")
-					}
+				if j < len(children)-1 {
+					enc.write(", ")
 				}
-				enc.write("]")
-			} else {
-				// Map
-				enc.format(children[0], lvl+1)
 			}
+			enc.write("]")
 
 			if i < tot-1 {
 				enc.write(", ")
@@ -105,7 +104,7 @@ func (enc *Encoder) format(n *Node, lvl int) error {
 }
 
 func (enc *Encoder) write(s string) {
-	enc.w.Write([]byte(s))
+	enc.writer.Write([]byte(s))
 }
 
 // https://golang.org/src/encoding/json/encode.go?s=5584:5627#L788

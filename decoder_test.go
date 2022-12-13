@@ -1,13 +1,25 @@
-package xml2json
+package xml2json_test
 
 import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
+	"xml2json"
 )
 
-var s = `<?xml version="1.0" encoding="UTF-8"?>
+func TestDecoder_Suite(t *testing.T) {
+	t.Parallel()
+	suite.Run(t, &TestDecoder{})
+}
+
+type TestDecoder struct {
+	source string
+	suite.Suite
+}
+
+func (t *TestDecoder) SetupSuite() {
+	t.source = `<?xml version="1.0" encoding="UTF-8"?>
   <osm version="0.6" generator="CGImap 0.0.2">
    <bounds minlat="54.0889580" minlon="12.2487570" maxlat="54.0913900" maxlon="12.2524800"/>
    <node id="298884269" lat="54.0901746" lon="12.2482632" user="SvenHRO" uid="46882" visible="true" version="1" changeset="676636" timestamp="2008-09-21T21:37:45Z"/>
@@ -18,47 +30,45 @@ var s = `<?xml version="1.0" encoding="UTF-8"?>
    </node>
    <foo>bar</foo>
   </osm>`
+}
 
 // TestDecode ensures that decode does not return any errors (not that useful)
-func TestDecode(t *testing.T) {
-	assert := assert.New(t)
-
+func (t *TestDecoder) TestDecode() {
 	// Decode XML document
-	root := &Node{}
-	var err error
-	var dec *Decoder
-	dec = NewDecoder(strings.NewReader(s))
-	err = dec.Decode(root)
-	assert.NoError(err)
+	root := &xml2json.Node{}
+	dec := xml2json.NewDecoder(strings.NewReader(t.source))
+	err := dec.Decode(root)
+	t.NoError(err)
 
 	dec.SetAttributePrefix("test")
 	dec.SetContentPrefix("test2")
 	err = dec.DecodeWithCustomPrefixes(root, "test3", "test4")
-	assert.NoError(err)
-
+	t.NoError(err)
 }
 
-func TestDecodeWithoutDefaultsAndExcludeAttributes(t *testing.T) {
-	assert := assert.New(t)
-
+func (t *TestDecoder) TestDecodeWithoutDefaultsAndExcludeAttributes() {
 	// Decode XML document
-	root := &Node{}
+	root := &xml2json.Node{}
 	var err error
-	var dec *Decoder
-	dec = NewDecoder(strings.NewReader(s), WithAttrPrefix(""), ExcludeAttributes([]string{"version", "generator"}))
+	var dec *xml2json.Decoder
+	dec = xml2json.NewDecoder(
+		strings.NewReader(t.source),
+		xml2json.WithAttrPrefix(""),
+		xml2json.ExcludeAttributes([]string{"version", "generator"}),
+	)
 	err = dec.Decode(root)
-	assert.NoError(err)
+	t.NoError(err)
 
 	// Check that some attribute`s name has no prefix and has expected value
-	assert.Exactly(root.Children["osm"][0].Children["bounds"][0].Children["minlat"][0].Data, "54.0889580")
+	t.Exactly(root.Children["osm"][0].Children["bounds"][0].Children["minlat"][0].Data, "54.0889580")
 	// Check that some attributes are not present
 	_, exists := root.Children["osm"][0].Children["version"]
-	assert.False(exists)
+	t.False(exists)
 	_, exists = root.Children["osm"][0].Children["generator"]
-	assert.False(exists)
+	t.False(exists)
 }
 
-func TestTrim(t *testing.T) {
+func (t *TestDecoder) TestTrim() {
 	table := []struct {
 		in       string
 		expected string
@@ -79,7 +89,7 @@ func TestTrim(t *testing.T) {
 	}
 
 	for _, scenario := range table {
-		got := trimNonGraphic(scenario.in)
-		assert.Equal(t, scenario.expected, got)
+		got := xml2json.TrimNonGraphic(scenario.in)
+		t.Equal(scenario.expected, got)
 	}
 }

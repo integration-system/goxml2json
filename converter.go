@@ -3,23 +3,32 @@ package xml2json
 import (
 	"bytes"
 	"io"
+
+	"github.com/pkg/errors"
 )
 
+type Converter struct {
+	plugins []Plugin
+}
+
+func NewConverter(plugins ...Plugin) Converter {
+	return Converter{
+		plugins: plugins,
+	}
+}
+
 // Convert converts the given XML document to JSON
-func Convert(r io.Reader, ps ...plugin) (*bytes.Buffer, error) {
-	// Decode XML document
+func (s Converter) Convert(r io.Reader) (*bytes.Buffer, error) {
 	root := &Node{}
-	err := NewDecoder(r, ps...).Decode(root)
+	err := NewDecoder(r, s.plugins...).Decode(root)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithMessage(err, "decode xml")
 	}
 
-	// Then encode it in JSON
 	buf := new(bytes.Buffer)
-	e := NewEncoder(buf, ps...)
-	err = e.Encode(root)
+	err = NewEncoder(buf, s.plugins...).Encode(root)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithMessage(err, "encode json")
 	}
 
 	return buf, nil
