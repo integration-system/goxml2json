@@ -24,20 +24,6 @@ type (
 	contentPrefixer string
 
 	excluder []string
-
-	nodesFormatter struct {
-		list []nodeFormatter
-	}
-	nodeFormatter struct {
-		path   string
-		plugin nodePlugin
-	}
-
-	nodePlugin interface {
-		AddTo(*Node)
-	}
-
-	arrayFormatter struct{}
 )
 
 // WithTypeConverter allows customized js type conversion behavior by passing in the desired JSTypes
@@ -125,37 +111,4 @@ func (ex *excluder) AddToEncoder(e *Encoder) *Encoder {
 func (ex *excluder) AddToDecoder(d *Decoder) *Decoder {
 	d.ExcludeAttributes([]string((*ex)))
 	return d
-}
-
-// WithNodes formats specific nodes
-func WithNodes(n ...nodeFormatter) *nodesFormatter {
-	return &nodesFormatter{list: n}
-}
-
-func (nf *nodesFormatter) AddToEncoder(e *Encoder) *Encoder {
-	return e
-}
-
-func (nf *nodesFormatter) AddToDecoder(d *Decoder) *Decoder {
-	d.AddFormatters(nf.list)
-	return d
-}
-
-func NodePlugin(path string, plugin nodePlugin) nodeFormatter {
-	return nodeFormatter{path: path, plugin: plugin}
-}
-
-func (nf *nodeFormatter) Format(node *Node) {
-	child := node.GetChild(nf.path)
-	if child != nil {
-		nf.plugin.AddTo(child)
-	}
-}
-
-func ToArray() *arrayFormatter {
-	return &arrayFormatter{}
-}
-
-func (af *arrayFormatter) AddTo(n *Node) {
-	n.ChildrenAlwaysAsArray = true
 }

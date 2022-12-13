@@ -6,9 +6,8 @@ import (
 
 // Node is a data element on a tree
 type Node struct {
-	Children              map[string]Nodes
-	Data                  string
-	ChildrenAlwaysAsArray bool
+	Children map[string]Nodes
+	Data     string
 }
 
 // Nodes is a list of nodes

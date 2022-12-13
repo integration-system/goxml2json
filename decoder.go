@@ -21,7 +21,6 @@ type Decoder struct {
 	attributePrefix string
 	contentPrefix   string
 	excludeAttrs    map[string]bool
-	formatters      []nodeFormatter
 }
 
 type element struct {
@@ -36,10 +35,6 @@ func (dec *Decoder) SetAttributePrefix(prefix string) {
 
 func (dec *Decoder) SetContentPrefix(prefix string) {
 	dec.contentPrefix = prefix
-}
-
-func (dec *Decoder) AddFormatters(formatters []nodeFormatter) {
-	dec.formatters = formatters
 }
 
 func (dec *Decoder) ExcludeAttributes(attrs []string) {
@@ -115,10 +110,6 @@ func (dec *Decoder) Decode(root *Node) error {
 			// Then change the current element to its parent
 			elem = elem.parent
 		}
-	}
-
-	for _, formatter := range dec.formatters {
-		formatter.Format(root)
 	}
 
 	return nil
