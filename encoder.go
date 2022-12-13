@@ -8,16 +8,20 @@ import (
 
 // An Encoder writes JSON objects to an output stream.
 type Encoder struct {
-	w               io.Writer
+	writer          io.Writer
 	err             error
 	contentPrefix   string
 	attributePrefix string
 	tc              encoderTypeConverter
 }
 
-// NewEncoder returns a new encoder that writes to w.
-func NewEncoder(w io.Writer, plugins ...plugin) *Encoder {
-	e := &Encoder{w: w, contentPrefix: contentPrefix, attributePrefix: attrPrefix}
+// NewEncoder returns a new encoder that writes to writer.
+func NewEncoder(writer io.Writer, plugins ...Plugin) *Encoder {
+	e := &Encoder{
+		writer:          writer,
+		contentPrefix:   "",
+		attributePrefix: "",
+	}
 	for _, p := range plugins {
 		e = p.AddToEncoder(e)
 	}
@@ -100,7 +104,7 @@ func (enc *Encoder) format(n *Node, lvl int) error {
 }
 
 func (enc *Encoder) write(s string) {
-	enc.w.Write([]byte(s))
+	enc.writer.Write([]byte(s))
 }
 
 // https://golang.org/src/encoding/json/encode.go?s=5584:5627#L788

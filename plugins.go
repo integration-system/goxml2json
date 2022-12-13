@@ -5,8 +5,8 @@ import (
 )
 
 type (
-	// an plugin is added to an encoder or/and to an decoder to allow custom functionality at runtime
-	plugin interface {
+	// Plugin is added to an encoder or/and to an decoder to allow custom functionality at runtime
+	Plugin interface {
 		AddToEncoder(*Encoder) *Encoder
 		AddToDecoder(*Decoder) *Decoder
 	}
@@ -27,7 +27,7 @@ type (
 )
 
 // WithTypeConverter allows customized js type conversion behavior by passing in the desired JSTypes
-func WithTypeConverter(ts ...JSType) *customTypeConverter {
+func WithTypeConverter(ts ...JSType) Plugin {
 	return &customTypeConverter{parseTypes: ts}
 }
 
@@ -67,7 +67,7 @@ func (tc *customTypeConverter) Convert(s string) string {
 }
 
 // WithAttrPrefix appends the given prefix to the json output of xml attribute fields to preserve namespaces
-func WithAttrPrefix(prefix string) *attrPrefixer {
+func WithAttrPrefix(prefix string) Plugin {
 	ap := attrPrefixer(prefix)
 	return &ap
 }
@@ -83,7 +83,7 @@ func (a *attrPrefixer) AddToDecoder(d *Decoder) *Decoder {
 }
 
 // WithContentPrefix appends the given prefix to the json output of xml content fields to preserve namespaces
-func WithContentPrefix(prefix string) *contentPrefixer {
+func WithContentPrefix(prefix string) Plugin {
 	c := contentPrefixer(prefix)
 	return &c
 }
@@ -99,7 +99,7 @@ func (c *contentPrefixer) AddToDecoder(d *Decoder) *Decoder {
 }
 
 // ExcludeAttributes excludes some xml attributes, for example, xmlns:xsi, xsi:noNamespaceSchemaLocation
-func ExcludeAttributes(attrs []string) *excluder {
+func ExcludeAttributes(attrs []string) Plugin {
 	ex := excluder(attrs)
 	return &ex
 }

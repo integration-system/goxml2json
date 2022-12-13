@@ -1,12 +1,24 @@
-package xml2json
+package xml2json_test
 
 import (
 	"encoding/json"
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
+	"xml2json"
 )
+
+func TestParse_Suite(t *testing.T) {
+	t.Parallel()
+	suite.Run(t, &TestParse{})
+}
+
+type TestParse struct {
+	suite.Suite
+}
+
+func (t *TestParse) SetupSuite() {}
 
 type Product struct {
 	ID       []int     `json:"id"`
@@ -39,41 +51,59 @@ const (
 		`
 )
 
-func TestAllJSTypeParsing(t *testing.T) {
+func (t *TestParse) TestAllJSTypeParsing() {
+	converter := xml2json.NewConverter(
+		xml2json.WithAttrPrefix("-"),
+		xml2json.WithContentPrefix("#"),
+		xml2json.WithTypeConverter(xml2json.Bool, xml2json.Int, xml2json.Float, xml2json.Null),
+	)
+
 	xml := strings.NewReader(productString)
-	jsBuf, err := Convert(xml, WithTypeConverter(Bool, Int, Float, Null))
-	assert.NoError(t, err, "could not parse test xml")
+	jsBuf, err := converter.Convert(xml)
+	t.NoError(err, "could not parse test xml")
+
 	product := Product{}
 	err = json.Unmarshal(jsBuf.Bytes(), &product)
-	assert.NoError(t, err, "could not unmarshal test json")
-	assert.Equal(t, 42, product.ID[0], "ID should match")
-	assert.Equal(t, 13.32, product.Price[0], "price should match")
-	assert.Equal(t, true, product.Deleted[0], "deleted should match")
-	assert.Equal(t, nil, product.Nullable[0], "nullable should match")
+	t.NoError(err, "could not unmarshal test json")
+	t.Equal(42, product.ID[0], "ID should match")
+	t.Equal(13.32, product.Price[0], "price should match")
+	t.Equal(true, product.Deleted[0], "deleted should match")
+	t.Equal(nil, product.Nullable[0], "nullable should match")
 }
 
-func TestStringParsing(t *testing.T) {
+func (t *TestParse) TestStringParsing() {
+	converter := xml2json.NewConverter(
+		xml2json.WithAttrPrefix("-"),
+		xml2json.WithContentPrefix("#"),
+	)
+
 	xml := strings.NewReader(productString)
-	jsBuf, err := Convert(xml)
-	assert.NoError(t, err, "could not parse test xml")
+	jsBuf, err := converter.Convert(xml)
+	t.NoError(err, "could not parse test xml")
 	product := StringProduct{}
 	err = json.Unmarshal(jsBuf.Bytes(), &product)
-	assert.NoError(t, err, "could not unmarshal test json")
-	assert.Equal(t, "42", product.ID[0], "ID should match")
-	assert.Equal(t, "13.32", product.Price[0], "price should match")
-	assert.Equal(t, "true", product.Deleted[0], "deleted should match")
-	assert.Equal(t, "null", product.Nullable[0], "nullable should match")
+	t.NoError(err, "could not unmarshal test json")
+	t.Equal("42", product.ID[0], "ID should match")
+	t.Equal("13.32", product.Price[0], "price should match")
+	t.Equal("true", product.Deleted[0], "deleted should match")
+	t.Equal("null", product.Nullable[0], "nullable should match")
 }
 
-func TestMixedParsing(t *testing.T) {
+func (t *TestParse) TestMixedParsing() {
+	converter := xml2json.NewConverter(
+		xml2json.WithAttrPrefix("-"),
+		xml2json.WithContentPrefix("#"),
+		xml2json.WithTypeConverter(xml2json.Float),
+	)
+
 	xml := strings.NewReader(productString)
-	jsBuf, err := Convert(xml, WithTypeConverter(Float))
-	assert.NoError(t, err, "could not parse test xml")
+	jsBuf, err := converter.Convert(xml)
+	t.NoError(err, "could not parse test xml")
 	product := MixedProduct{}
 	err = json.Unmarshal(jsBuf.Bytes(), &product)
-	assert.NoError(t, err, "could not unmarshal test json")
-	assert.Equal(t, "42", product.ID[0], "ID should match")
-	assert.Equal(t, 13.32, product.Price[0], "price should match")
-	assert.Equal(t, "true", product.Deleted[0], "deleted should match")
-	assert.Equal(t, "null", product.Nullable[0], "nullable should match")
+	t.NoError(err, "could not unmarshal test json")
+	t.Equal("42", product.ID[0], "ID should match")
+	t.Equal(13.32, product.Price[0], "price should match")
+	t.Equal("true", product.Deleted[0], "deleted should match")
+	t.Equal("null", product.Nullable[0], "nullable should match")
 }

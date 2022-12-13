@@ -1,17 +1,33 @@
-package xml2json
+package xml2json_test
 
 import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
+	"xml2json"
 )
+
+func TestConverter_Suite(t *testing.T) {
+	t.Parallel()
+	suite.Run(t, &TestConverter{})
+}
+
+type TestConverter struct {
+	suite.Suite
+	converter xml2json.Converter
+}
+
+func (t *TestConverter) SetupSuite() {
+	t.converter = xml2json.NewConverter(
+		xml2json.WithAttrPrefix("-"),
+		xml2json.WithContentPrefix("#"),
+	)
+}
 
 // TestConvert ensures that the whole process works correctly
 // It takes an XML document and outputs a JSON document
-func TestConvert(t *testing.T) {
-	assert := assert.New(t)
-
+func (t *TestConverter) TestConvert() {
 	s := `<?xml version="1.0" encoding="UTF-8"?>
   <osm version="0.6" generator="CGImap 0.0.2">
    <bounds minlat="54.0889580" minlon="12.2487570" maxlat="54.0913900" maxlon="12.2524800"/>
@@ -27,7 +43,6 @@ func TestConvert(t *testing.T) {
 	 </mixed>
   </osm>`
 
-	// Build SimpleJSON
 	expected := []byte(`{
 	  "osm": [{
 	    "-version": ["0.6"],
@@ -91,17 +106,12 @@ func TestConvert(t *testing.T) {
 	  }]
 	}`)
 
-	// Then encode it in JSON
-	actual, err := Convert(strings.NewReader(s))
-	assert.NoError(err)
-
-	// Assertion
-	assert.JSONEq(string(expected), actual.String())
+	actual, err := t.converter.Convert(strings.NewReader(s))
+	t.NoError(err)
+	t.JSONEq(string(expected), actual.String())
 }
 
-func TestConvertWithNewLines(t *testing.T) {
-	assert := assert.New(t)
-
+func (t *TestConverter) TestConvertWithNewLines() {
 	s := `<?xml version="1.0" encoding="UTF-8"?>
   <osm>
    <foo>
@@ -111,24 +121,18 @@ func TestConvertWithNewLines(t *testing.T) {
 	</foo>
   </osm>`
 
-	// Build SimpleJSON
 	expected := []byte(`{
 	  "osm": [{
 	    "foo": ["foo\n\n\t\tbar"]
 	  }]
 	}`)
 
-	// Then encode it in JSON
-	actual, err := Convert(strings.NewReader(s))
-	assert.NoError(err)
-
-	// Assertion
-	assert.JSONEq(string(expected), actual.String())
+	actual, err := t.converter.Convert(strings.NewReader(s))
+	t.NoError(err)
+	t.JSONEq(string(expected), actual.String())
 }
 
-func TestConvertWithMixedTags(t *testing.T) {
-	assert := assert.New(t)
-
+func (t *TestConverter) TestConvertWithMixedTags() {
 	s := `<?xml version="1.0" encoding="UTF-8"?>
 	<soap-env:Envelope xmlns:soap-env="http://schemas.xmlsoap.org/soap/envelope/">
 	    <soap-env:Header>
@@ -140,7 +144,6 @@ func TestConvertWithMixedTags(t *testing.T) {
 	    </soap-env:Header>
 	</soap-env:Envelope> `
 
-	// Build SimpleJSON
 	expected := []byte(`
 {
   "Envelope": [
@@ -177,31 +180,22 @@ func TestConvertWithMixedTags(t *testing.T) {
 }
 `)
 
-	// Then encode it in JSON
-	actual, err := Convert(strings.NewReader(s))
-	assert.NoError(err)
-
-	// Assertion
-	assert.JSONEq(string(expected), actual.String())
+	actual, err := t.converter.Convert(strings.NewReader(s))
+	t.NoError(err)
+	t.JSONEq(string(expected), actual.String())
 }
 
 // TestConvertISO ensures that other charsets can be converted
-func TestConvertISO(t *testing.T) {
-	assert := assert.New(t)
-
+func (t *TestConverter) TestConvertISO() {
 	s := []byte{0x3C, 0x3F, 0x78, 0x6D, 0x6C, 0x20, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6F, 0x6E, 0x3D, 0x22, 0x31, 0x2E, 0x30, 0x22, 0x20, 0x65, 0x6E, 0x63, 0x6F, 0x64, 0x69, 0x6E, 0x67, 0x3D, 0x22, 0x49, 0x53, 0x4F, 0x2D, 0x38, 0x38, 0x35, 0x39, 0x2D, 0x31, 0x22, 0x3F, 0x3E, 0x3C, 0x63, 0x68, 0x61, 0x72, 0x73, 0x65, 0x74, 0x3E, 0xFC, 0x62, 0x65, 0x72, 0x20, 0x63, 0x6F, 0x6D, 0x70, 0x6C, 0x65, 0x78, 0x3C, 0x2F, 0x63, 0x68, 0x61, 0x72, 0x73, 0x65, 0x74, 0x3E}
 
-	// Build SimpleJSON
 	expected := []byte(`
 {
 	  "charset": ["über complex"]
 }
 `)
 
-	// Then encode it in JSON
-	actual, err := Convert(strings.NewReader(string(s)))
-	assert.NoError(err)
-
-	// Assertion
-	assert.JSONEq(string(expected), actual.String())
+	actual, err := t.converter.Convert(strings.NewReader(string(s)))
+	t.NoError(err)
+	t.JSONEq(string(expected), actual.String())
 }

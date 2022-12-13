@@ -1,24 +1,33 @@
-package xml2json
+package xml2json_test
 
 import (
 	"bytes"
 	"encoding/json"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
+	"xml2json"
 )
 
-type bio struct {
-	Firstname string
-	Lastname  string
-	Hobbies   []string
-	Misc      map[string]string
+func TestEncoder_Suite(t *testing.T) {
+	t.Parallel()
+	suite.Run(t, &TestEncoder{})
 }
 
-// TestEncode ensures that encode outputs the expected JSON document.
-func TestEncode(t *testing.T) {
-	assert := assert.New(t)
+type TestEncoder struct {
+	suite.Suite
+}
 
+func (t *TestEncoder) SetupSuite() {}
+
+// TestEncode ensures that encode outputs the expected JSON document.
+func (t *TestEncoder) TestEncode() {
+	type bio struct {
+		Firstname string
+		Lastname  string
+		Hobbies   []string
+		Misc      map[string]string
+	}
 	author := bio{
 		Firstname: "Bastien",
 		Lastname:  "Gysler",
@@ -37,43 +46,43 @@ func TestEncode(t *testing.T) {
 	}
 
 	// Build document
-	root := &Node{}
-	root.AddChild("firstname", &Node{
+	root := &xml2json.Node{}
+	root.AddChild("firstname", &xml2json.Node{
 		Data: author.Firstname,
 	})
-	root.AddChild("lastname", &Node{
+	root.AddChild("lastname", &xml2json.Node{
 		Data: author.Lastname,
 	})
 
 	for _, h := range author.Hobbies {
-		root.AddChild("hobbies", &Node{
+		root.AddChild("hobbies", &xml2json.Node{
 			Data: h,
 		})
 	}
 
-	misc := &Node{}
+	misc := &xml2json.Node{}
 	for k, v := range author.Misc {
-		misc.AddChild(k, &Node{
+		misc.AddChild(k, &xml2json.Node{
 			Data: v,
 		})
 	}
 	root.AddChild("misc", misc)
-	var enc *Encoder
+	var enc *xml2json.Encoder
 
 	// Convert to JSON string
 	buf := new(bytes.Buffer)
-	enc = NewEncoder(buf)
+	enc = xml2json.NewEncoder(buf)
 
 	err := enc.Encode(nil)
-	assert.NoError(err)
+	t.NoError(err)
 
-	attr := WithAttrPrefix("test")
+	attr := xml2json.WithAttrPrefix("test")
 	attr.AddToEncoder(enc)
-	content := WithContentPrefix("test2")
+	content := xml2json.WithContentPrefix("test2")
 	content.AddToEncoder(enc)
 
 	err = enc.Encode(root)
-	assert.NoError(err)
+	t.NoError(err)
 
 	// Build SimpleJSON
 	expectedResultBytes := []byte(`
@@ -106,11 +115,11 @@ func TestEncode(t *testing.T) {
 `)
 	expectedResult := make(map[string]any)
 	err = json.Unmarshal(expectedResultBytes, &expectedResult)
-	assert.NoError(err)
+	t.NoError(err)
 
 	actualResult := make(map[string]any)
 	err = json.Unmarshal(buf.Bytes(), &actualResult)
-	assert.NoError(err)
+	t.NoError(err)
 
-	assert.EqualValues(expectedResult, actualResult)
+	t.EqualValues(expectedResult, actualResult)
 }
