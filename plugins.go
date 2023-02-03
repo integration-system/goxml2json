@@ -4,27 +4,22 @@ import (
 	"strings"
 )
 
-type (
-	// Plugin is added to an encoder or/and to an decoder to allow custom functionality at runtime
-	Plugin interface {
-		AddToEncoder(*Encoder) *Encoder
-		AddToDecoder(*Decoder) *Decoder
-	}
-	// a type converter overides the default string sanitization for encoding json
-	encoderTypeConverter interface {
-		Convert(string) string
-	}
-	// customTypeConverter converts strings to JSON types using a best guess approach, only parses the JSON types given
-	// when initialized via WithTypeConverter
-	customTypeConverter struct {
-		parseTypes []JSType
-	}
+// Plugin is added to an encoder or/and to an decoder to allow custom functionality at runtime
+type Plugin interface {
+	AddToEncoder(*Encoder) *Encoder
+	AddToDecoder(*Decoder) *Decoder
+}
 
-	attrPrefixer    string
-	contentPrefixer string
+// encoderTypeConverter a type converter overides the default string sanitization for encoding json
+type encoderTypeConverter interface {
+	Convert(string) string
+}
 
-	excluder []string
-)
+// customTypeConverter converts strings to JSON types using a best guess approach, only parses the JSON types given
+// when initialized via WithTypeConverter
+type customTypeConverter struct {
+	parseTypes []JSType
+}
 
 // WithTypeConverter allows customized js type conversion behavior by passing in the desired JSTypes
 func WithTypeConverter(ts ...JSType) Plugin {
@@ -43,7 +38,7 @@ func (tc *customTypeConverter) parseAsString(t JSType) bool {
 	return true
 }
 
-// Adds the type converter to the encoder
+// AddToEncoder Adds the type converter to the encoder
 func (tc *customTypeConverter) AddToEncoder(e *Encoder) *Encoder {
 	e.tc = tc
 	return e
@@ -66,6 +61,8 @@ func (tc *customTypeConverter) Convert(s string) string {
 	return s
 }
 
+type attrPrefixer string
+
 // WithAttrPrefix appends the given prefix to the json output of xml attribute fields to preserve namespaces
 func WithAttrPrefix(prefix string) Plugin {
 	ap := attrPrefixer(prefix)
@@ -81,6 +78,8 @@ func (a *attrPrefixer) AddToDecoder(d *Decoder) *Decoder {
 	d.attributePrefix = string((*a))
 	return d
 }
+
+type contentPrefixer string
 
 // WithContentPrefix appends the given prefix to the json output of xml content fields to preserve namespaces
 func WithContentPrefix(prefix string) Plugin {
@@ -98,6 +97,8 @@ func (c *contentPrefixer) AddToDecoder(d *Decoder) *Decoder {
 	return d
 }
 
+type excluder []string
+
 // ExcludeAttributes excludes some xml attributes, for example, xmlns:xsi, xsi:noNamespaceSchemaLocation
 func ExcludeAttributes(attrs []string) Plugin {
 	ex := excluder(attrs)
@@ -110,5 +111,20 @@ func (ex *excluder) AddToEncoder(e *Encoder) *Encoder {
 
 func (ex *excluder) AddToDecoder(d *Decoder) *Decoder {
 	d.ExcludeAttributes([]string((*ex)))
+	return d
+}
+
+type allToArray struct{}
+
+func AllAttrToArray() Plugin {
+	return allToArray{}
+}
+
+func (p allToArray) AddToEncoder(e *Encoder) *Encoder {
+	e.allAttributeToArray = true
+	return e
+}
+
+func (p allToArray) AddToDecoder(d *Decoder) *Decoder {
 	return d
 }

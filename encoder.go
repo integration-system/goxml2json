@@ -4,15 +4,18 @@ import (
 	"bytes"
 	"io"
 	"unicode/utf8"
+
+	"github.com/pkg/errors"
 )
 
 // An Encoder writes JSON objects to an output stream.
 type Encoder struct {
-	writer          io.Writer
-	err             error
-	contentPrefix   string
-	attributePrefix string
-	tc              encoderTypeConverter
+	writer              io.Writer
+	err                 error
+	contentPrefix       string
+	attributePrefix     string
+	tc                  encoderTypeConverter
+	allAttributeToArray bool
 }
 
 // NewEncoder returns a new encoder that writes to writer.
@@ -59,9 +62,15 @@ func (enc *Encoder) format(n *Node, lvl int) error {
 			enc.write("\"")
 			enc.write(enc.contentPrefix)
 			enc.write("content")
-			enc.write("\": [")
-			enc.write(sanitiseString(n.Data))
-			enc.write("], ")
+			if enc.allAttributeToArray {
+				enc.write("\": [")
+				enc.write(sanitiseString(n.Data))
+				enc.write("], ")
+			} else {
+				enc.write("\": ")
+				enc.write(sanitiseString(n.Data))
+				enc.write(", ")
+			}
 		}
 
 		i := 0
@@ -71,16 +80,27 @@ func (enc *Encoder) format(n *Node, lvl int) error {
 			enc.write(label)
 			enc.write("\": ")
 
-			// Array
-			enc.write("[")
-			for j, c := range children {
-				enc.format(c, lvl+1)
+			if enc.allAttributeToArray || len(children) > 1 {
+				// Array
+				enc.write("[")
+				for j, c := range children {
+					err := enc.format(c, lvl+1)
+					if err != nil {
+						return errors.WithMessagef(err, "format %s children", label)
+					}
 
-				if j < len(children)-1 {
-					enc.write(", ")
+					if j < len(children)-1 {
+						enc.write(", ")
+					}
+				}
+				enc.write("]")
+			} else {
+				// Map
+				err := enc.format(children[0], lvl+1)
+				if err != nil {
+					return errors.WithMessagef(err, "format %s children", label)
 				}
 			}
-			enc.write("]")
 
 			if i < tot-1 {
 				enc.write(", ")
