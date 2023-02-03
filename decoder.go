@@ -93,9 +93,12 @@ func (dec *Decoder) Decode(root *Node) error {
 
 			// Extract attributes as children
 			for _, a := range se.Attr {
-				if _, ok := dec.excludeAttrs[a.Name.Local]; ok {
+				_, spaceFound := dec.excludeAttrs[a.Name.Space]
+				_, localFound := dec.excludeAttrs[a.Name.Local]
+				if spaceFound || localFound {
 					continue
 				}
+
 				elem.n.AddChild(dec.attributePrefix+a.Name.Local, &Node{Data: a.Value})
 			}
 		case xml.CharData:
