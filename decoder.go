@@ -2,6 +2,7 @@ package xml2json
 
 import (
 	"encoding/xml"
+	"fmt"
 	"io"
 	"unicode"
 
@@ -115,7 +116,23 @@ func (dec *Decoder) Decode(root *Node) error {
 		}
 	}
 
+	dec.setPath("", root)
+
 	return nil
+}
+
+func (dec *Decoder) setPath(path string, node *Node) {
+	node.Label = path
+	for label, nodes := range node.Children {
+		childPath := label
+		if path != "" {
+			childPath = fmt.Sprintf("%s.%s", path, childPath)
+		}
+
+		for _, n := range nodes {
+			dec.setPath(childPath, n)
+		}
+	}
 }
 
 // TrimNonGraphic returns a slice of the string s, with all leading and trailing

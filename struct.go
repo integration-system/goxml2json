@@ -6,6 +6,7 @@ import (
 
 // Node is a data element on a tree
 type Node struct {
+	Label    string
 	Children map[string]Nodes
 	Data     string
 }

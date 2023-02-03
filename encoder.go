@@ -16,6 +16,7 @@ type Encoder struct {
 	attributePrefix     string
 	tc                  encoderTypeConverter
 	allAttributeToArray bool
+	attrIsAlwaysAnArray map[string]bool
 }
 
 // NewEncoder returns a new encoder that writes to writer.
@@ -95,10 +96,19 @@ func (enc *Encoder) format(n *Node, lvl int) error {
 				}
 				enc.write("]")
 			} else {
+				child := children[0]
+				attrIsArray := enc.attrIsAlwaysAnArray[child.Label]
+				if attrIsArray {
+					enc.write("[")
+				}
 				// Map
-				err := enc.format(children[0], lvl+1)
+				err := enc.format(child, lvl+1)
 				if err != nil {
 					return errors.WithMessagef(err, "format %s children", label)
+				}
+
+				if attrIsArray {
+					enc.write("]")
 				}
 			}
 

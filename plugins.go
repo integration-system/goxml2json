@@ -128,3 +128,27 @@ func (p allToArray) AddToEncoder(e *Encoder) *Encoder {
 func (p allToArray) AddToDecoder(d *Decoder) *Decoder {
 	return d
 }
+
+type attrToArray struct {
+	attrList []string
+}
+
+func AttrToArray(attrList []string) Plugin {
+	return attrToArray{
+		attrList: attrList,
+	}
+}
+
+func (p attrToArray) AddToEncoder(e *Encoder) *Encoder {
+	attrIsArrayMap := make(map[string]bool)
+	for _, s := range p.attrList {
+		attrIsArrayMap[s] = true
+	}
+
+	e.attrIsAlwaysAnArray = attrIsArrayMap
+	return e
+}
+
+func (p attrToArray) AddToDecoder(d *Decoder) *Decoder {
+	return d
+}
