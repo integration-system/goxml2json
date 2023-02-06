@@ -22,6 +22,7 @@ func (t *TestConverter) SetupSuite() {
 	t.converter = xml2json.NewConverter(
 		xml2json.WithAttrPrefix("-"),
 		xml2json.WithContentPrefix("#"),
+		xml2json.AllAttrToArray(),
 	)
 }
 

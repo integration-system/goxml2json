@@ -56,6 +56,7 @@ func (t *TestParse) TestAllJSTypeParsing() {
 		xml2json.WithAttrPrefix("-"),
 		xml2json.WithContentPrefix("#"),
 		xml2json.WithTypeConverter(xml2json.Bool, xml2json.Int, xml2json.Float, xml2json.Null),
+		xml2json.AllAttrToArray(),
 	)
 
 	xml := strings.NewReader(productString)
@@ -75,6 +76,7 @@ func (t *TestParse) TestStringParsing() {
 	converter := xml2json.NewConverter(
 		xml2json.WithAttrPrefix("-"),
 		xml2json.WithContentPrefix("#"),
+		xml2json.AllAttrToArray(),
 	)
 
 	xml := strings.NewReader(productString)
@@ -94,6 +96,7 @@ func (t *TestParse) TestMixedParsing() {
 		xml2json.WithAttrPrefix("-"),
 		xml2json.WithContentPrefix("#"),
 		xml2json.WithTypeConverter(xml2json.Float),
+		xml2json.AllAttrToArray(),
 	)
 
 	xml := strings.NewReader(productString)

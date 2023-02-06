@@ -87,30 +87,24 @@ func (t *TestEncoder) TestEncode() {
 	// Build SimpleJSON
 	expectedResultBytes := []byte(`
 {
-  "firstname": [
-    "Bastien"
-  ],
-  "lastname": [
-    "Gysler"
-  ],
+  "firstname": "Bastien",
+  "lastname": "Gysler",
   "hobbies": [
     "DJ",
     "Running",
     "Tennis"
   ],
-  "misc": [
-    {
-      "lineSeparator": ["\u2028"],
-      "Nationality": ["Swiss"],
-      "City": ["Zürich"],
-      "foo": [""],
-      "bar": ["\"quoted text\""],
-      "esc": ["escaped \\ sanitized"],
-      "r": ["\r return line"],
-      "default": ["< >"],
-      "runeError": ["\uFFFD"]
-    }
-  ]
+  "misc": {
+      "lineSeparator": "\u2028",
+      "Nationality": "Swiss",
+      "City": "Zürich",
+      "foo": "",
+      "bar": "\"quoted text\"",
+      "esc": "escaped \\ sanitized",
+      "r": "\r return line",
+      "default": "< >",
+      "runeError": "\uFFFD"
+  }
 }
 `)
 	expectedResult := make(map[string]any)
