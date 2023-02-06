@@ -54,7 +54,7 @@ func (t *TestDecoder) TestDecodeWithoutDefaultsAndExcludeAttributes() {
 	dec = xml2json.NewDecoder(
 		strings.NewReader(t.source),
 		xml2json.WithAttrPrefix(""),
-		xml2json.ExcludeAttributes([]string{"version", "generator"}),
+		xml2json.ExcludeAttributes("version", "generator"),
 	)
 	err = dec.Decode(root)
 	t.NoError(err)

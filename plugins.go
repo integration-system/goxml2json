@@ -100,7 +100,7 @@ func (c *contentPrefixer) AddToDecoder(d *Decoder) *Decoder {
 type excluder []string
 
 // ExcludeAttributes excludes some xml attributes, for example, xmlns:xsi, xsi:noNamespaceSchemaLocation
-func ExcludeAttributes(attrs []string) Plugin {
+func ExcludeAttributes(attrs ...string) Plugin {
 	ex := excluder(attrs)
 	return &ex
 }
@@ -110,7 +110,7 @@ func (ex *excluder) AddToEncoder(e *Encoder) *Encoder {
 }
 
 func (ex *excluder) AddToDecoder(d *Decoder) *Decoder {
-	d.ExcludeAttributes([]string((*ex)))
+	d.ExcludeAttributes(*ex)
 	return d
 }
 
