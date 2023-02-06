@@ -133,7 +133,7 @@ type attrToArray struct {
 	attrList []string
 }
 
-func AttrToArray(attrList []string) Plugin {
+func AttrToArray(attrList ...string) Plugin {
 	return attrToArray{
 		attrList: attrList,
 	}
