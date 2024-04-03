@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/integration-system/goxml2json"
 	"github.com/stretchr/testify/suite"
+	xml2json "github.com/txix-open/goxml2json"
 )
 
 func TestParse_Suite(t *testing.T) {
